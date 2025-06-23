@@ -10,10 +10,14 @@ const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode }) => {
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center space-x-2">
-        <div className="text-2xl">🚌</div>
-        <div className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+        <Link to="/">
+        <span className="text-4xl">🚌
+        </span>
+        <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
           IndiBus
-        </div>
+        </span>
+        
+        </Link>
       </div>
 
       <div className="flex items-center gap-6">
