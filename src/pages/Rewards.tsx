@@ -4,7 +4,7 @@ const Rewards = () => {
   return (
     <section className="flex-1 flex flex-col items-center justify-center px-4 py-12">
       <h2 className="text-3xl font-bold text-yellow-600 mb-4">Your Eco Rewards</h2>
-      <p className="text-lg max-w-xl text-gray-700 mb-8">Earn points and unlock discounts by choosing sustainable travel options. View your stats, coupons, and eco achievements.</p>
+      <p className="text-lg max-w-xl text-gray-700 mb-8 dark:text-white">Earn points and unlock discounts by choosing sustainable travel options. View your stats, coupons, and eco achievements.</p>
       <div className="w-full max-w-lg flex flex-col gap-6">
         <div className="rounded-xl bg-white shadow p-6">
           <h3 className="font-bold text-xl mb-1">Total Points</h3>

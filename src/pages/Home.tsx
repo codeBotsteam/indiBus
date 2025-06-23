@@ -247,9 +247,9 @@ const Home = () => {
             <div className="bg-blue-600 p-3 rounded-full">
               <Bus className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-800">BusTracker</h1>
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white" >BusTracker</h1>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto dark:text-white">
             Find the best bus routes and track real-time arrivals for your journey
           </p>
         </div>
