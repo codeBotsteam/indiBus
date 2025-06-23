@@ -5,12 +5,14 @@ import {
   Navigation,
   ArrowRight,
   Bus,
+  Clock,
+  TrendingUp,
 } from "lucide-react";
-import BusCard from "../components/BusCard"; // ✅ Adjust path as per your structure
+import BusCard from "../components/BusCard"; // Import your actual BusCard component
 
 // ---------------- MOCK DATA ---------------- //
 
-const mockBusData: { routes: { [key: string]: string[] } } = {
+const mockBusData = {
   routes: {
     "Central Station": ["Mall Road", "University", "Airport", "Downtown"],
     "Mall Road": ["Central Station", "University", "Hospital", "Beach"],
@@ -32,9 +34,18 @@ const mockBusData: { routes: { [key: string]: string[] } } = {
   },
 };
 
-const getAllStops = (): string[] => Object.keys(mockBusData.routes);
+const frequentRoutes = [
+  { from: "Central Station", to: "Mall Road", time: "15 min", fare: "₹25" },
+  { from: "University", to: "Downtown", time: "22 min", fare: "₹30" },
+  { from: "Airport", to: "Hotel District", time: "12 min", fare: "₹20" },
+  { from: "Mall Road", to: "Beach", time: "18 min", fare: "₹28" },
+  { from: "Central Station", to: "Airport", time: "25 min", fare: "₹35" },
+  { from: "University", to: "Library", time: "8 min", fare: "₹15" },
+];
 
-const getBusesByRoute = (start: string, end: string) => {
+const getAllStops = () => Object.keys(mockBusData.routes);
+
+const getBusesByRoute = (start, end) => {
   const buses = [
     {
       busNumber: "DL 01 AA 1010",
@@ -101,58 +112,85 @@ const getBusesByRoute = (start: string, end: string) => {
     },
   ];
 
-  const startRoutes = mockBusData.routes[start] || [];
-  const endRoutes = mockBusData.routes[end] || [];
+  const startRoutes = mockBusData.routes || [];
+  const endRoutes = mockBusData.routes || [];
 
   if (startRoutes.includes(end) || endRoutes.includes(start)) {
     return buses;
   }
 
-  return buses.slice(0, 1); // fewer buses for indirect route
+  return buses.slice(0, 1);
 };
 
 // ---------------- HOME COMPONENT ---------------- //
 
-const Home: React.FC = () => {
+const Home = () => {
   const [startStop, setStartStop] = useState<string>("");
   const [endStop, setEndStop] = useState<string>("");
   const [matchedBuses, setMatchedBuses] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [allStops, setAllStops] = useState<string[]>([]);
-  const [searchSuggestions, setSearchSuggestions] = useState<{
-    start: string[];
-    end: string[];
-  }>({ start: [], end: [] });
+  const [searchSuggestions, setSearchSuggestions] = useState<{ start: string[]; end: string[] }>({
+    start: [],
+    end: [],
+  });
+  const [showStartSuggestions, setShowStartSuggestions] = useState<boolean>(false);
+  const [showEndSuggestions, setShowEndSuggestions] = useState<boolean>(false);
 
   useEffect(() => {
     setAllStops(getAllStops());
   }, []);
 
   const filterSuggestions = (input: string, type: "start" | "end") => {
-    if (!input || input.length < 2) {
+    if (!input || input.length < 1) {
       setSearchSuggestions((prev) => ({ ...prev, [type]: [] }));
+      if (type === "start") setShowStartSuggestions(false);
+      if (type === "end") setShowEndSuggestions(false);
       return;
     }
+    
     const filtered = allStops
       .filter((stop) => stop.toLowerCase().includes(input.toLowerCase()))
       .slice(0, 8);
+    
     setSearchSuggestions((prev) => ({ ...prev, [type]: filtered }));
+    
+    if (type === "start") setShowStartSuggestions(filtered.length > 0);
+    if (type === "end") setShowEndSuggestions(filtered.length > 0);
   };
 
-  const handleStartStopChange = (value: string) => {
+  const handleStartStopChange = (value) => {
     setStartStop(value);
     filterSuggestions(value, "start");
   };
 
-  const handleEndStopChange = (value: string) => {
+  const handleEndStopChange = (value) => {
     setEndStop(value);
     filterSuggestions(value, "end");
   };
 
+  const selectStartStop = (stop) => {
+    setStartStop(stop);
+    setShowStartSuggestions(false);
+    setSearchSuggestions((prev) => ({ ...prev, start: [] }));
+  };
+
+  const selectEndStop = (stop) => {
+    setEndStop(stop);
+    setShowEndSuggestions(false);
+    setSearchSuggestions((prev) => ({ ...prev, end: [] }));
+  };
+
   const handleSwapStops = () => {
+    const temp = startStop;
     setStartStop(endStop);
-    setEndStop(startStop);
+    setEndStop(temp);
+  };
+
+  const handleQuickRoute = (from, to) => {
+    setStartStop(from);
+    setEndStop(to);
   };
 
   const handleSearch = () => {
@@ -179,7 +217,8 @@ const Home: React.FC = () => {
 
     setIsSearching(true);
     setHasSearched(true);
-    setSearchSuggestions({ start: [], end: [] });
+    setShowStartSuggestions(false);
+    setShowEndSuggestions(false);
 
     setTimeout(() => {
       const matches = getBusesByRoute(startStop.trim(), endStop.trim());
@@ -188,8 +227,19 @@ const Home: React.FC = () => {
     }, 1200);
   };
 
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowStartSuggestions(false);
+      setShowEndSuggestions(false);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
         {/* HEADER */}
         <div className="text-center mb-12">
@@ -205,7 +255,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* SEARCH BOX */}
-        <div className="max-w-4xl mx-auto mb-12">
+        <div className="max-w-4xl mx-auto mb-8">
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="relative">
@@ -216,22 +266,31 @@ const Home: React.FC = () => {
                     type="text"
                     value={startStop}
                     onChange={(e) => handleStartStopChange(e.target.value)}
+                    onFocus={() => {
+                      if (searchSuggestions.start.length > 0) {
+                        setShowStartSuggestions(true);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                     placeholder="Enter starting point"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                {searchSuggestions.start.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {showStartSuggestions && searchSuggestions.start.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {searchSuggestions.start.map((stop, index) => (
                       <button
                         key={index}
-                        onClick={() => {
-                          setStartStop(stop);
-                          setSearchSuggestions((prev) => ({ ...prev, start: [] }));
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectStartStop(stop);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-blue-50"
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
                       >
-                        {stop}
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                          {stop}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -246,22 +305,31 @@ const Home: React.FC = () => {
                     type="text"
                     value={endStop}
                     onChange={(e) => handleEndStopChange(e.target.value)}
+                    onFocus={() => {
+                      if (searchSuggestions.end.length > 0) {
+                        setShowEndSuggestions(true);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                     placeholder="Enter destination"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                {searchSuggestions.end.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {showEndSuggestions && searchSuggestions.end.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {searchSuggestions.end.map((stop, index) => (
                       <button
                         key={index}
-                        onClick={() => {
-                          setEndStop(stop);
-                          setSearchSuggestions((prev) => ({ ...prev, end: [] }));
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectEndStop(stop);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-blue-50"
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
                       >
-                        {stop}
+                        <div className="flex items-center">
+                          <Navigation className="w-4 h-4 text-gray-400 mr-2" />
+                          {stop}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -272,7 +340,7 @@ const Home: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={handleSwapStops}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors"
               >
                 <ArrowRight className="w-4 h-4 transform rotate-90 mr-2" />
                 Swap
@@ -281,7 +349,7 @@ const Home: React.FC = () => {
               <button
                 onClick={handleSearch}
                 disabled={isSearching}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center transition-colors"
               >
                 {isSearching ? (
                   <>
@@ -299,6 +367,45 @@ const Home: React.FC = () => {
           </div>
         </div>
 
+        {/* FREQUENT ROUTES */}
+        {!hasSearched && (
+          <div className="max-w-4xl mx-auto mb-12">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="flex items-center mb-6">
+                <TrendingUp className="w-6 h-6 text-blue-600 mr-2" />
+                <h3 className="text-xl font-bold text-gray-800">Popular Routes</h3>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {frequentRoutes.map((route, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      handleQuickRoute(route.from, route.to);
+                      setTimeout(() => handleSearch(), 0);
+                    }}
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-left group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {route.time}
+                      </div>
+                      <div className="text-sm font-semibold text-green-600">
+                        {route.fare}
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-800 font-medium">{route.from}</span>
+                      <ArrowRight className="w-4 h-4 mx-2 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                      <span className="text-gray-800 font-medium">{route.to}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* RESULTS */}
         {hasSearched && (
           <div className="max-w-6xl mx-auto">
@@ -315,7 +422,6 @@ const Home: React.FC = () => {
                     {matchedBuses.length} route{matchedBuses.length !== 1 ? "s" : ""} found
                   </span>
                 </div>
-
                 {matchedBuses.length > 0 ? (
                   <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {matchedBuses.map((bus, index) => (
@@ -323,7 +429,11 @@ const Home: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center text-gray-500 py-12">No buses found.</div>
+                  <div className="text-center text-gray-500 py-12">
+                    <Bus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No buses found</h3>
+                    <p>Try searching for a different route</p>
+                  </div>
                 )}
               </div>
             )}
