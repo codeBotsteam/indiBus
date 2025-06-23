@@ -1,6 +1,8 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import IndiBot from './components/IndiBot';
+import { MessageCircle } from 'lucide-react';
 
 // Lazy loading pages
 const Home = React.lazy(() => import("./pages/Home"));
@@ -10,6 +12,7 @@ const Rewards = React.lazy(() => import("./pages/Rewards"));
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [showBot, setShowBot] = useState(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -26,6 +29,10 @@ const App = () => {
         <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
         <main className="flex-1 flex flex-col">
           <Suspense fallback={<div className="text-center p-8 text-gray-500 dark:text-gray-300">Loading...</div>}>
+          <button onClick={() => setShowBot(true)} className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-50" aria-label="Open chat">
+            <MessageCircle size={24} />
+          </button>
+          {showBot && <IndiBot onClose={() => setShowBot(false)} />}
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/plan" element={<PlanTrip />} />
